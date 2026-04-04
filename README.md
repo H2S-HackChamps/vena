@@ -143,6 +143,15 @@ adk run .
 adk web --allow_origins 'regex:https://.*\.cloudshell\.dev'
 ```
 
+### 8. Deploy the agent
+
+Run the Deployment setup script. This script automates setting up of environment variables in the terminal, enabling APIs, creating the Service Account, and assigning it a role of Vertex AI User, and then deploying to Google Cloud Run:
+
+```bash
+chmod +x ./setup/setup_deployment.sh
+./setup/setup_deployment.sh
+```
+
 ---
 
 ## Sample Queries

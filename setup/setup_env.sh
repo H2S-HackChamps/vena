@@ -25,30 +25,6 @@ if [[ ! "$ENABLED_SERVICES" == *"bigquery.googleapis.com"* ]]; then
     gcloud --quiet beta services mcp enable bigquery.googleapis.com --project=$PROJECT_ID
 fi
 
-# # Create API Key
-# echo "Creating Google Maps Platform API Key..."
-
-# API_KEY_NAME="medical-demo-key-$(date +%s)"
-# API_KEY_JSON=$(gcloud alpha services api-keys create --display-name="$API_KEY_NAME" \
-#     --api-target=service=mapstools.googleapis.com \
-#     --format=json 2>/dev/null)
-
-# if [ $? -eq 0 ]; then
-#     API_KEY=$(echo "$API_KEY_JSON" | grep -oP '"keyString": "\K[^"]+' 2>/dev/null || echo "$API_KEY_JSON" | grep '"keyString":' | cut -d '"' -f 4)
-#     if [ -z "$API_KEY" ]; then
-#         echo "Could not parse API Key from JSON."
-#     fi
-#     echo "Successfully created API Key."
-# else
-#     echo "Could not automate API key creation."
-#     read -p "Please enter your Google Maps Platform API Key manually: " API_KEY
-# fi
-
-# if [ -z "$API_KEY" ]; then
-#     echo "Error: API Key cannot be empty."
-#     exit 1
-# fi
-
 # Create .env file
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ENV_FILE="$SCRIPT_DIR/../agents/mcp_medical_app/.env"
@@ -61,6 +37,8 @@ GOOGLE_CLOUD_PROJECT=$PROJECT_ID
 GOOGLE_CLOUD_LOCATION=global
 GOOGLE_GEMINI_MODEL="gemini-2.5-flash"
 BIG_QUERY_DATASET="mcp_medical"
+GOOGLE_CLOUD_SA_NAME=hackathon-vena
+GOOGLE_CLOUD_SERVICE_ACCOUNT=${GOOGLE_CLOUD_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com
 
 # NCBI / PubMed
 NCBI_API_KEY=
