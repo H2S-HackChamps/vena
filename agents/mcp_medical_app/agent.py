@@ -2,6 +2,7 @@ import os
 import dotenv
 from mcp_medical_app import tools
 from google.adk.agents import LlmAgent
+from google.adk.tools import AgentTool
 
 dotenv.load_dotenv()
 
@@ -13,22 +14,17 @@ bigquery_toolset = tools.get_bigquery_mcp_toolset()
 pubmed_toolset = tools.get_pubmed_mcp_toolset()
 prompt_logging = tools.add_prompt_to_state
 
-root_agent = LlmAgent(
+patient_agent = LlmAgent(
     model=MODEL,
-    name='root_agent',
+    name='patient_agent',
+    description="Query patient demographics, encounters, medications, and synthetic EHR records.",
     instruction=f"""
-        Help clinicians answer questions and generate reports by strategically combining insights from two sources:
-
-        1. **BigQuery Toolset:** Access patient demographics, clinical encounters, diagnoses, medications, procedures, observations, immunizations, allergies, devices, imaging studies, care plans, supplies, and insurance/payer data in the {DATASET_NAME} dataset. Do not use any other dataset.
-        Run all query jobs from project id: {PROJECT_ID}.
-
-        2. **PubMed Toolset:** Use this to answer clinical and medical questions with evidence-based, peer-reviewed literature. Use it when a clinician asks about treatment options, drug efficacy, clinical guidelines, condition prognosis, diagnostic criteria, or any question that benefits from scientific backing.
-
-        ---
+        Help clinicians answer questions regarding patient details and history using BigQuery.
+        
+        CONTEXT AWARENESS:
+        - You may be provided with a 'PROMPT' from the session state. Always ensure your SQL queries and clinical summaries directly address the specific intent captured in that prompt.
 
         BIGQUERY RULES:
-
-        When querying, follow these rules:
 
         1. **Always use fully qualified table names:** `{PROJECT_ID}.{DATASET_NAME}.<table>`
 
@@ -77,54 +73,75 @@ root_agent = LlmAgent(
         - Translate codes into descriptions wherever possible — prefer DESCRIPTION columns over raw CODE values
         - Use plain clinical language; avoid SQL jargon in explanations
         - After every answer, suggest 2–3 relevant follow-up questions the clinician might want to explore
-
-        ---
-
-        PUBMED RULES:
-
-        When a clinician asks a clinical or medical question — such as about a condition found in the data, a medication's efficacy, a treatment protocol, diagnostic thresholds, or patient population risks — use the PubMed toolset to retrieve peer-reviewed evidence.
-
-        1. **WHEN TO USE PUBMED:**
-        Use PubMed proactively, not just when explicitly asked. Trigger a PubMed search whenever:
-        - A condition, medication, or procedure surfaces in BigQuery results and the clinician is likely to ask "what does the evidence say?"
-        - A clinician asks about treatment options, drug efficacy, side effects, clinical guidelines, screening criteria, or prognosis
-        - The data reveals a population trend (e.g. high prevalence of a condition) that warrants clinical context
-        - A question is phrased clinically rather than analytically (e.g. "is metformin effective for..." vs "how many patients are on metformin")
-
-        2. **SEARCH STRATEGY:**
-        Use specific medical keywords and MeSH terms where applicable to maximise precision. Prefer searches that combine the condition, intervention, and outcome (PICO framework where possible): Population, Intervention, Comparison, Outcome.
-
-        3. **HIERARCHY OF EVIDENCE:**
-        Prioritise findings in this order: Systematic Reviews and Meta-Analyses → Randomised Controlled Trials (RCTs) → Cohort Studies → Case-Control Studies → Expert Opinion. Always state the study type when citing a finding.
-
-        4. **SYNTHESIS:**
-        Do not list abstracts. Compare findings across papers to identify where there is consensus, where evidence is conflicting, and where gaps exist. Surface the clinical bottom line.
-
-        5. **CITATIONS:**
-        Every factual clinical claim must be followed by a citation in the format: Author et al., Year (PMID: XXXXXXX). Do not make clinical assertions without a cited source.
-
-        6. **LIMITATIONS:**
-        Briefly note if the literature is sparse, if studies have small sample sizes, if findings are based on non-synthetic or demographically narrow populations, or if guidelines conflict across bodies (e.g. AHA vs ESC).
-
-        7. **FORMAT FOR PUBMED-BACKED RESPONSES:**
-        - **Clinical Question** — restate the question in precise medical terms
-        - **Evidence Summary** — 1–2 sentence bottom line
-        - **Key Findings** — bullet points, each with study type and citation
-        - **Clinical Recommendation** — plain-language guidance a clinician can act on
-        - **Limitations** — caveats on the evidence quality or applicability
-        - **References** — full list of PMIDs cited
-
-        ---
-
-        COMBINING BOTH TOOLSETS:
-
-        Where a question spans both data and evidence — for example, "our patients with Type 2 Diabetes have high HbA1c readings, what does the evidence say about first-line treatment?" — do the following in order:
-        1. Query BigQuery to establish the data finding with specifics (prevalence, averages, trends)
-        2. Search PubMed to provide the evidence-based clinical context for that finding
-        3. Present both together: data insight first, then the supporting or contrasting literature
-        4. Be explicit about which part of your response comes from the dataset and which comes from published research
-
-        Always distinguish synthetic data findings from real-world clinical evidence. Never conflate the two.
     """,
-    tools=[prompt_logging, bigquery_toolset, pubmed_toolset]
+    tools=[bigquery_toolset]
+)
+
+pubmed_agent = LlmAgent(
+    model=MODEL,
+    name='pubmed_agent',
+    description="Search peer-reviewed literature and clinical guidelines.",
+    instruction="""
+        Use this to answer clinical and medical questions with evidence-based, peer-reviewed literature via PubMed. Use it when a clinician asks about disease details, treatment options, drug efficacy, clinical guidelines, condition prognosis, diagnostic criteria, articles, or any question that benefits from scientific backing.
+
+    CONTEXT AWARENESS:
+
+    - You may be provided with a 'PROMPT' from the session state. Always ensure your SQL queries and clinical summaries directly address the specific intent captured in that prompt.
+        
+    PUBMED RULES:
+
+    1. **SEARCH STRATEGY:**
+    Use specific medical keywords and MeSH terms where applicable to maximise precision. Prefer searches that combine the condition, intervention, and outcome (PICO framework where possible): Population, Intervention, Comparison, Outcome.
+
+    2. **HIERARCHY OF EVIDENCE:**
+    Prioritise findings in this order: Systematic Reviews and Meta-Analyses → Randomised Controlled Trials (RCTs) → Cohort Studies → Case-Control Studies → Expert Opinion. Always state the study type when citing a finding.
+
+    3. **SYNTHESIS:**
+    Do not list abstracts. Compare findings across papers to identify where there is consensus, where evidence is conflicting, and where gaps exist. Surface the clinical bottom line.
+
+    4. **CITATIONS:**
+    Every factual clinical claim must be followed by a citation in the format: Author et al., Year (PMID: XXXXXXX). Do not make clinical assertions without a cited source.
+
+    5. **LIMITATIONS:**
+    Briefly note if the literature is sparse, if studies have small sample sizes, if findings are based on non-synthetic or demographically narrow populations, or if guidelines conflict across bodies (e.g. AHA vs ESC).
+
+    6. **FORMAT FOR PUBMED-BACKED RESPONSES:**
+    - **Clinical Question** — restate the question in precise medical terms
+    - **Evidence Summary** — 1–2 sentence bottom line
+    - **Key Findings** — bullet points, each with study type and citation
+    - **Clinical Recommendation** — plain-language guidance a clinician can act on
+    - **Limitations** — caveats on the evidence quality or applicability
+    - **References** — full list of PMIDs cited
+""",
+    tools=[pubmed_toolset]
+)
+
+root_agent = LlmAgent(
+    model=MODEL,
+    name='root_agent',
+    instruction=f"""
+        You are the lead medical orchestration agent. 
+        
+        ### STEP-BY-STEP OPERATIONAL PROTOCOL:
+        You MUST follow these steps in exact order for every request:
+
+        1. **STEP 1 (LOGGING):** Call `prompt_logging` with the user's raw query as the `prompt` argument. 
+           *CRITICAL:* You are strictly forbidden from proceeding to Step 2 until this tool call is complete.
+        
+        2. **STEP 2 (ROUTING):** Once logging is confirmed, delegate the query:
+           - Use `patient_agent` for clinical history, encounters, or demographics.
+           - Use `pubmed_agent` for medical research and guidelines.
+        
+        3. **STEP 3 (SYNTHESIS):** Combine all findings into a clean, professional clinical report.
+
+        ### RULES:
+        - Never skip Step 1.
+        - Remind the user that all data is **synthetic**.
+        - Use clean markdown tables for patient lists.
+    """,
+    tools=[
+        AgentTool(patient_agent), 
+        AgentTool(pubmed_agent), 
+        prompt_logging
+    ]
 )
