@@ -41,8 +41,8 @@ GOOGLE_CLOUD_SA_NAME=hackathon-vena
 GOOGLE_CLOUD_SERVICE_ACCOUNT=${GOOGLE_CLOUD_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com
 
 # NCBI / PubMed
-NCBI_API_KEY=448f4d233a5936ef02770ed3529762f7d708
-NCBI_EMAIL=csridhar.mbbs.ms.mch@gmail.com
+NCBI_API_KEY=<YOUR_NCBI_API_KEY>
+NCBI_EMAIL=<YOUR_NCBI_EMAIL>
 EOF
 
 echo "Successfully updated $ENV_FILE"

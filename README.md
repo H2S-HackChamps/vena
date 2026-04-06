@@ -32,18 +32,18 @@ The system operates via a multi-agent architectural protocol driven by a Lead Or
                  ┌────────────────┴────────────────┐
                  │                                 │
                  ▼                                 ▼
-       ┌─────────────────┐               ┌──────────────────────┐
-       │  patient_agent  │               │     pubmed_agent     │
-       │  (BigQuery MCP) │               │     (PubMed MCP)     │
-       └────────┬────────┘               └─────────┬────────────┘
-                │                                  │
-                ▼                                  ▼
-      ┌─────────────────┐               ┌──────────────────────┐
-      │                 │               │   pubmed.caseyjhand  │
-      │   BigQuery      │               │   .com/mcp           │
-      │   {PROJECT_ID}  │               │   (NCBI API)         │
-      │   {DATASET_NAME}│               └──────────────────────┘
-      └─────────────────┘
+      ┌──────────────────┐               ┌──────────────────────┐
+      │  patient_agent   │               │     pubmed_agent     │
+      │  (BigQuery MCP)  │               │     (PubMed MCP)     │
+      └────────┬─────────┘               └─────────┬────────────┘
+               │                                   │
+               ▼                                   ▼
+      ┌────────────────────┐             ┌───────────────────────┐
+      │   BigQuery         │             │   pubmed.caseyjhand   │
+      │   {PROJECT_ID}     │             │   .com/mcp            │
+      │   {DATASET_NAME}   │             │   (NCBI API)          │
+      └────────────────────┘             └───────────────────────┘
+      
 ```
 
 ---
@@ -240,7 +240,9 @@ Below are sample questions organised by category that you can ask Vena directly 
 
 These are the most powerful query type — Vena will pull from both toolsets and present them together:
 
-> *"Our dataset shows a high prevalence of hypertension — what does the evidence say about population-level interventions for blood pressure management?"*
+> *"What is the most common condition among patients that are 50 years and above and give me the recent guidelines for the management of that condition."*
+
+> *"What is the most prevalent condition among patients - diabetes or hypertension? Give the recent guidelines for the management of that condition"*
 
 > *"Many patients in this dataset are on Etonogestrel implants for over a year. What does the literature say about long-term safety and efficacy?"*
 
