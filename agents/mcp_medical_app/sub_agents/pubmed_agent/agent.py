@@ -1,19 +1,16 @@
-import os
-import dotenv
-from mcp_medical_app import tools
 from google.adk.agents import LlmAgent
-from . import prompt
+from google.adk.models import Gemini
 
-dotenv.load_dotenv()
+from .prompt import PUBMED_AGENT_PROMPT
+from mcp_medical_app.tools import get_pubmed_mcp_toolset
+from mcp_medical_app.config import MODEL, RETRY_OPTIONS
 
-MODEL = os.getenv('GOOGLE_GEMINI_MODEL', 'gemini-2.5-flash')
-
-pubmed_toolset = tools.get_pubmed_mcp_toolset()
+pubmed_toolset = get_pubmed_mcp_toolset()
 
 pubmed_agent = LlmAgent(
-    model=MODEL,
+    model=Gemini(model=MODEL, retry_options=RETRY_OPTIONS),
     name='pubmed_agent',
     description="Search peer-reviewed literature and clinical guidelines.",
-    instruction=prompt.PUBMET_AGENT_PROMPT,
+    instruction=PUBMED_AGENT_PROMPT,
     tools=[pubmed_toolset]
 )

@@ -1,10 +1,4 @@
-import os
-import dotenv
-
-dotenv.load_dotenv()
-
-PROJECT_ID = os.getenv('GOOGLE_CLOUD_PROJECT', 'project_not_set')
-DATASET_NAME = os.getenv('BIG_QUERY_DATASET', 'mcp_medical')
+from mcp_medical_app.config import PROJECT_ID, DATASET_NAME
 
 PATIENT_AGENT_PROMPT = f"""
     Help clinicians answer questions regarding patient details and history using BigQuery.

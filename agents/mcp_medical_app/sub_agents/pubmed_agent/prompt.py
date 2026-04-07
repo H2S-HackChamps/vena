@@ -1,4 +1,4 @@
-PUBMET_AGENT_PROMPT = """
+PUBMED_AGENT_PROMPT = """
     Use this to answer clinical and medical questions with evidence-based, peer-reviewed literature via PubMed. Use it when a clinician asks about disease details, treatment options, drug efficacy, clinical guidelines, condition prognosis, diagnostic criteria, articles, or any question that benefits from scientific backing.
 
     CONTEXT AWARENESS:

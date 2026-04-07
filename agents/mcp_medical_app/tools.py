@@ -8,11 +8,9 @@ import google.cloud.logging
 from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset
 from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPConnectionParams, create_mcp_http_client
 from google.adk.tools.tool_context import ToolContext
-from .auth import GoogleCredentialsAuth
 
-BIGQUERY_MCP_URL = "https://bigquery.googleapis.com/mcp" 
-PUBMED_MCP_URL = "https://pubmed.caseyjhand.com/mcp"
-BIGQUERY_AUTH_URL = "https://www.googleapis.com/auth/bigquery"
+from .auth import GoogleCredentialsAuth
+from .config import BIGQUERY_AUTH_URL, BIGQUERY_MCP_URL, NCBI_API_KEY, NCBI_EMAIL, PUBMED_MCP_URL
 
 def get_bigquery_mcp_toolset():
 
@@ -37,16 +35,11 @@ def get_bigquery_mcp_toolset():
     return tools
 
 def get_pubmed_mcp_toolset():
-    dotenv.load_dotenv()
-    ncbi_api_key = os.getenv('NCBI_API_KEY', 'no_api_found')
-    ncbi_email = os.getenv('NCBI_EMAIL', 'no_api_found')
-
     HEADERS_WITH_API_AUTH = {
-        "NCBI_API_KEY": ncbi_api_key,
-        "NCBI_EMAIL": ncbi_email,
+        "NCBI_API_KEY": NCBI_API_KEY,
+        "NCBI_EMAIL": NCBI_EMAIL,
         "Accept": "application/json, text/event-stream"
     }
-
     tools = MCPToolset(
         connection_params=StreamableHTTPConnectionParams(
             url=PUBMED_MCP_URL,
