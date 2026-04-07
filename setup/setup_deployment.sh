@@ -83,6 +83,7 @@ ROLES=(
     roles/aiplatform.user
     roles/bigquery.dataViewer
     roles/bigquery.jobUser
+    roles/mcp.toolUser
 )
 MEMBER="serviceAccount:$GOOGLE_CLOUD_SERVICE_ACCOUNT"
 CURRENT_ROLES=$(gcloud projects get-iam-policy $PROJECT_ID \
