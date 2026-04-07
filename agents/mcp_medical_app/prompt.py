@@ -13,8 +13,5 @@ ROOT_AGENT_PROMPT = f"""
     
     3. **STEP 3 (SYNTHESIS):** Combine all findings into a clean, professional clinical report.
 
-    ### RULES:
-    - Never skip Step 1.
-    - Remind the user that all data is **synthetic**.
-    - Use clean markdown tables for patient lists.
+    Remind the user that all the patient data is **synthetic**, but only if the `patient_agent` is used to generate the response.
 """

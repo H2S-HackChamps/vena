@@ -6,37 +6,35 @@ import google.auth
 import google.cloud.logging
 
 from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset
-from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPConnectionParams
+from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPConnectionParams, create_mcp_http_client
 from google.adk.tools.tool_context import ToolContext
+from .auth import GoogleCredentialsAuth
 
 BIGQUERY_MCP_URL = "https://bigquery.googleapis.com/mcp" 
 PUBMED_MCP_URL = "https://pubmed.caseyjhand.com/mcp"
+BIGQUERY_AUTH_URL = "https://www.googleapis.com/auth/bigquery"
 
-def get_bigquery_mcp_toolset():   
-        
+def get_bigquery_mcp_toolset():
+
     credentials, project_id = google.auth.default(
-        scopes=["https://www.googleapis.com/auth/bigquery"]
+        scopes=[BIGQUERY_AUTH_URL]
     )
 
-    credentials.refresh(google.auth.transport.requests.Request())
-    oauth_token = credentials.token
-        
-    HEADERS_WITH_OAUTH = {
-        "Authorization": f"Bearer {oauth_token}",
-        "x-goog-user-project": project_id
-    }
+    bq_auth = GoogleCredentialsAuth(credentials, project_id)
+
+    def bigquery_http_client_factory(headers=None, timeout=None, auth=None):
+        return create_mcp_http_client(headers=headers, timeout=timeout, auth=bq_auth)
 
     tools = MCPToolset(
         connection_params=StreamableHTTPConnectionParams(
             url=BIGQUERY_MCP_URL,
-            headers=HEADERS_WITH_OAUTH,
-            timeout=30.0,          
-            sse_read_timeout=300.0
+            timeout=30.0,
+            sse_read_timeout=300.0,
+            httpx_client_factory=bigquery_http_client_factory
         )
     )
     print("MCP Toolset configured for Streamable HTTP connection.")
     return tools
-
 
 def get_pubmed_mcp_toolset():
     dotenv.load_dotenv()
@@ -61,7 +59,7 @@ def get_pubmed_mcp_toolset():
     print("MCP Toolset configured for Streamable HTTP connection.")
     return tools
 
-# --- Setup Logging and Environment ---
+# Setup Logging and Environment
 
 cloud_logging_client = google.cloud.logging.Client()
 cloud_logging_client.setup_logging()

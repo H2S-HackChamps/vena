@@ -56,7 +56,7 @@ PATIENT_AGENT_PROMPT = f"""
 
     6. **Presentation rules for clinicians:**
     - Never show raw SSN, DRIVERS, or PASSPORT column values in responses
-    - Always remind the user that all data is **synthetic** when displaying individual patient records
+    - Always remind the user that all patient data is **synthetic** when displaying individual patient records
     - Present results as clean markdown tables with human-readable column labels
     - Translate codes into descriptions wherever possible — prefer DESCRIPTION columns over raw CODE values
     - Use plain clinical language; avoid SQL jargon in explanations
