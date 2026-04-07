@@ -39,25 +39,66 @@ fi
 echo "Found Service Account: $GOOGLE_CLOUD_SERVICE_ACCOUNT"
 echo ""
 
-# Enable necessary APIs
-echo "Enabling APIs.."
-gcloud services enable run.googleapis.com --project=$PROJECT_ID
-gcloud services enable artifactregistry.googleapis.com --project=$PROJECT_ID
-gcloud services enable cloudbuild.googleapis.com --project=$PROJECT_ID
-gcloud services enable aiplatform.googleapis.com --project=$PROJECT_ID
-gcloud services enable compute.googleapis.com --project=$PROJECT_ID
+# Enable APIs (skip any that are already enabled)
+echo "Checking APIs.."
+APIS=(
+    run.googleapis.com
+    artifactregistry.googleapis.com
+    cloudbuild.googleapis.com
+    aiplatform.googleapis.com
+    compute.googleapis.com
+)
+ENABLED_APIS=$(gcloud services list --enabled --format="value(config.name)" --project=$PROJECT_ID 2>/dev/null)
+for API in "${APIS[@]}"; do
+    if echo "$ENABLED_APIS" | grep -q "^${API}$"; then
+        echo "  [SKIP] $API already enabled"
+    else
+        echo "  [ENABLING] $API.."
+        gcloud services enable $API --project=$PROJECT_ID
+    fi
+done
 echo "DONE"
 echo ""
 
-# Create Service Account
-echo "Creating Service Account.."
-gcloud iam service-accounts create $GOOGLE_CLOUD_SA_NAME --display-name="Service Account for Hackathon Submission"
+# Create Service Account (skip if it already exists)
+echo "Checking Service Account.."
+SA_EXISTS=$(gcloud iam service-accounts list \
+    --filter="email:${GOOGLE_CLOUD_SERVICE_ACCOUNT}" \
+    --format="value(email)" \
+    --project=$PROJECT_ID 2>/dev/null)
+if [ -n "$SA_EXISTS" ]; then
+    echo "  [SKIP] Service account $GOOGLE_CLOUD_SERVICE_ACCOUNT already exists"
+else
+    echo "  [CREATING] Service account $GOOGLE_CLOUD_SA_NAME.."
+    gcloud iam service-accounts create $GOOGLE_CLOUD_SA_NAME \
+        --display-name="Service Account for Hackathon Submission" \
+        --project=$PROJECT_ID
+fi
 echo "DONE"
 echo ""
 
-# Grant the "Vertex AI User" role to your service account
-echo "Granting the "Vertex AI User" role to the service account.."
-gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$GOOGLE_CLOUD_SERVICE_ACCOUNT" --role="roles/aiplatform.user"
+# Grant IAM roles (skip any already granted)
+echo "Checking IAM roles.."
+ROLES=(
+    roles/aiplatform.user
+    roles/bigquery.dataViewer
+    roles/bigquery.jobUser
+)
+MEMBER="serviceAccount:$GOOGLE_CLOUD_SERVICE_ACCOUNT"
+CURRENT_ROLES=$(gcloud projects get-iam-policy $PROJECT_ID \
+    --flatten="bindings[].members" \
+    --filter="bindings.members:${MEMBER}" \
+    --format="value(bindings.role)" 2>/dev/null)
+for ROLE in "${ROLES[@]}"; do
+    if echo "$CURRENT_ROLES" | grep -q "^${ROLE}$"; then
+        echo "  [SKIP] $ROLE already granted"
+    else
+        echo "  [GRANTING] $ROLE.."
+        gcloud projects add-iam-policy-binding $PROJECT_ID \
+            --member="$MEMBER" \
+            --role="$ROLE"
+    fi
+done
 echo "DONE"
 echo ""
 

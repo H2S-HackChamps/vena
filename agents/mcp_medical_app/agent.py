@@ -2,6 +2,7 @@ import os
 import dotenv
 from google.adk.agents import LlmAgent
 from google.adk.tools import AgentTool
+from google.genai import types
 
 from mcp_medical_app import tools
 from .sub_agents.patient_agent import patient_agent
@@ -22,5 +23,13 @@ root_agent = LlmAgent(
         AgentTool(patient_agent), 
         AgentTool(pubmed_agent), 
         prompt_logging
-    ]
+    ],
+    generate_content_config=types.GenerateContentConfig(
+        http_options=types.HttpOptions(
+            retry_options=types.HttpRetryOptions(
+                initial_delay=1,  # seconds before first retry
+                attempts=5        # number of retry attempts
+            )
+        )
+    )
 )

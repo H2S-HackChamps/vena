@@ -94,8 +94,15 @@ cd vena
 
 ### 2. Create a virtual environment and activate it
 
+Run this only for the first time:
+
 ```bash
 python3 -m venv .venv
+```
+
+This needs to run every time you're starting the terminal:
+
+```bash
 source .venv/bin/activate
 ```
 
