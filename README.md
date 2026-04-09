@@ -266,7 +266,7 @@ These are the most powerful query type — Vena will pull from both toolsets and
 - **PII fields are suppressed.** The agent will not display raw SSN, Drivers License, or Passport fields from the dataset.
 - **Evidence is cited.** Every clinical claim sourced from PubMed includes the study type and PMID so findings can be independently verified.
 
----
+------
 
 ## Toolsets
 
